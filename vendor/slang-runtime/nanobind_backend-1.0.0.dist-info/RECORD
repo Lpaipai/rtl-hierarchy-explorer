@@ -1,0 +1,7 @@
+nanobind_backend/_nb_backend_v1.cp313-win_amd64.pyd,sha256=JaH2NQzs8NPDiHp3ev4GeQwmgYgPDVa-wCddJ_8zF_M,159232
+nanobind_backend/__init__.py,sha256=KTObUNWNTBaUFtyTL64HpqnyNn09FQcpJ7yXBgkRncg,1918
+nanobind_backend-1.0.0.dist-info/DELVEWHEEL,sha256=ht0vKC5LOZSqEu5hl27ybCRHTUhgF4JcOHq6m5aRFZA,415
+nanobind_backend-1.0.0.dist-info/METADATA,sha256=W_N-sJqSYUpIbU2Xu6wZ4tCLpBWnuQ0GMV76-CcB5FY,1382
+nanobind_backend-1.0.0.dist-info/RECORD,,
+nanobind_backend-1.0.0.dist-info/WHEEL,sha256=dXz53UX_wVrENU3pg7IjBHl1TfATF0jKSXtQDtrFnLw,105
+nanobind_backend.libs/msvcp140-a4c2229bdc2a2a630acdc095b4d86008.dll,sha256=pMIim9wqKmMKzcCVtNhgCOXD47x3cxdDVPPaT1vrnN4,575056

@@ -1,0 +1,4 @@
+* text=auto eol=lf
+vendor/slang-runtime/** -text
+*.wasm -text
+*.png -text

@@ -1,0 +1,27 @@
+{
+  "python": {
+    "version": "3.13.16",
+    "sha256": "97dae5274cc54867065e8d5a3226e48c35017ed332a0fdb0e27d5b5821961297",
+    "url": "https://www.python.org/ftp/python/3.13.16/python-3.13.16-embed-amd64.zip"
+  },
+  "pyslang": {
+    "version": "12.0.0",
+    "sha256": "90848d0a3853f7f4ed7f021df4af83c8e2130d7a498449c26f27a4509934596e",
+    "url": "https://files.pythonhosted.org/packages/5b/1c/09975b8776b0552ec36263d5a18ca014574a80a3c84a9ff8bff909c0f2cc/pyslang-12.0.0-cp311-abi3-win_amd64.whl"
+  },
+  "nanobind": {
+    "version": "1.0.0",
+    "sha256": "915c6ff4ce92584cdde18a24cc5d730f04a70c2f26bc0bc4db903ca54043eb86",
+    "url": "https://files.pythonhosted.org/packages/90/49/8038eedfd35433968e638081ca4eb6881869e517f766beff0f095387dc9a/nanobind_backend-1.0.0-cp313-cp313-win_amd64.whl"
+  },
+  "derivedHost": {
+    "verifiedCodePage": 65001,
+    "source": "vendor/slang-runtime/python.exe",
+    "sourceSha256": "31fe10b4ed82a2f960af0ef9931f46a4b84ff286f8b6ffd9dee098cf4f10f17f",
+    "output": "vendor/slang-runtime/rtl-python.exe",
+    "change": "仅为副本的 Windows manifest 添加 activeCodePage=UTF-8，原版保留",
+    "sha256": "09671ee13eb84786e33acaf351f82f8f1cc80b6b96eb5b931f5c734b28600086",
+    "recipe": "scripts/prepare-python-host.py"
+  },
+  "verifiedAt": "2026-10-16T18:04:32.0640943+08:00"
+}

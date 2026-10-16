@@ -1,0 +1,6 @@
+{
+  "rtlHierarchy.analysisMode": "static",
+  "rtlHierarchy.fileLists": ["rtl.f"],
+  "rtlHierarchy.topModule": "demo_top",
+  "rtlHierarchy.debounceMs": 100
+}

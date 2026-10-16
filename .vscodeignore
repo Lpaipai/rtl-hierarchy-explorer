@@ -1,0 +1,13 @@
+**/*
+!package.json
+!README.md
+!CHANGELOG.md
+!THIRD_PARTY_NOTICES.md
+!LICENSE
+!SUPPORT.md
+!media/**
+!dist/extension.cjs
+!dist/worker.cjs
+!dist/*.wasm
+!dist/licenses/**
+!dist/slang-runtime/**

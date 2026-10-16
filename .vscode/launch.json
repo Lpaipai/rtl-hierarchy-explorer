@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [{
+    "name": "调试 RTL Hierarchy",
+    "type": "extensionHost",
+    "request": "launch",
+    "args": [
+      "--extensionDevelopmentPath=${workspaceFolder}",
+      "--user-data-dir=${workspaceFolder}/.vscode-test/debug-user",
+      "--extensions-dir=${workspaceFolder}/.vscode-test/debug-extensions",
+      "${workspaceFolder}/test/fixtures/project"
+    ],
+    "env": {
+      "VSCODE_PORTABLE": "${workspaceFolder}/.vscode-test/debug-portable",
+      "TEMP": "${workspaceFolder}/.tmp",
+      "TMP": "${workspaceFolder}/.tmp"
+    },
+    "preLaunchTask": "build"
+  }]
+}

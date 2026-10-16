@@ -1,0 +1,295 @@
+{
+  "name": "rtl-hierarchy-explorer",
+  "displayName": "RTL Hierarchy Explorer",
+  "description": "本地 Verilog/SystemVerilog 活动层次展开、静态浏览、工程范围与源码导航",
+  "version": "1.0.1",
+  "publisher": "liaoweipeng1",
+  "preview": false,
+  "icon": "media/icon.png",
+  "keywords": ["Verilog", "SystemVerilog", "RTL", "FPGA", "hierarchy", "slang"],
+  "galleryBanner": { "color": "#102235", "theme": "dark" },
+  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Lpaipai/rtl-hierarchy-explorer.git"
+  },
+  "homepage": "https://github.com/Lpaipai/rtl-hierarchy-explorer#readme",
+  "bugs": { "url": "https://github.com/Lpaipai/rtl-hierarchy-explorer/issues" },
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Other"
+  ],
+  "extensionKind": [
+    "workspace"
+  ],
+  "activationEvents": [
+    "onView:rtlHierarchy.tree"
+  ],
+  "main": "./dist/extension.cjs",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "受限工作区仅使用静态 WASM 解析；精确模式需要信任工作区后运行包内 slang。"
+    },
+    "virtualWorkspaces": {
+      "supported": false
+    }
+  },
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "rtlHierarchy",
+          "title": "RTL Hierarchy",
+          "icon": "media/hierarchy.svg"
+        }
+      ]
+    },
+    "views": {
+      "rtlHierarchy": [
+        {
+          "id": "rtlHierarchy.tree",
+          "name": "RTL 实例层次"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "rtlHierarchy.selectMode",
+        "title": "RTL Hierarchy: 切换精确 / 静态模式",
+        "icon": "$(symbol-structure)"
+      },
+      {
+        "command": "rtlHierarchy.refresh",
+        "title": "RTL Hierarchy: 刷新",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "rtlHierarchy.selectTop",
+        "title": "RTL Hierarchy: 选择顶层",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "rtlHierarchy.selectFileList",
+        "title": "RTL Hierarchy: 选择 .f 工程文件列表",
+        "icon": "$(files)"
+      },
+      {
+        "command": "rtlHierarchy.openInstance",
+        "title": "跳转实例位置"
+      },
+      {
+        "command": "rtlHierarchy.openDefinition",
+        "title": "跳转模块定义",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "rtlHierarchy.showLog",
+        "title": "RTL Hierarchy: 显示索引日志"
+      },
+      {
+        "command": "rtlHierarchy.manageScope",
+        "title": "RTL Hierarchy: 管理索引范围",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "rtlHierarchy.openSource",
+        "title": "打开源文件"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "rtlHierarchy.selectMode",
+          "when": "view == rtlHierarchy.tree",
+          "group": "navigation@0"
+        },
+        {
+          "command": "rtlHierarchy.selectTop",
+          "when": "view == rtlHierarchy.tree",
+          "group": "navigation@1"
+        },
+        {
+          "command": "rtlHierarchy.selectFileList",
+          "when": "view == rtlHierarchy.tree",
+          "group": "navigation@2"
+        },
+        {
+          "command": "rtlHierarchy.refresh",
+          "when": "view == rtlHierarchy.tree",
+          "group": "navigation@3"
+        },
+        {
+          "command": "rtlHierarchy.manageScope",
+          "when": "view == rtlHierarchy.tree",
+          "group": "navigation@4"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "rtlHierarchy.openDefinition",
+          "when": "view == rtlHierarchy.tree && viewItem == rtlModule",
+          "group": "navigation"
+        },
+        {
+          "command": "rtlHierarchy.openInstance",
+          "when": "view == rtlHierarchy.tree && viewItem == rtlModule",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "RTL Hierarchy",
+      "properties": {
+        "rtlHierarchy.analysisMode": {
+          "type": "string",
+          "enum": ["elaborated", "static"],
+          "default": "elaborated",
+          "scope": "resource",
+          "enumDescriptions": ["Windows x64：按已保存文件展开宏、参数和 generate", "跨平台：实时语法关系，不计算活动分支"],
+          "description": "精确模式使用包内 slang；未保存修改时等待保存，不显示过期的活动树。"
+        },
+        "rtlHierarchy.includeDirectories": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "scope": "resource",
+          "description": "精确模式额外 include 搜索目录，相对工作区；合并 .f 中的 +incdir+ / -I。"
+        },
+        "rtlHierarchy.defines": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "scope": "resource",
+          "description": "精确模式宏，例如 SYNTHESIS、LANES=4；合并 .f 中的 +define+ / -D。"
+        },
+        "rtlHierarchy.parameters": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "scope": "resource",
+          "description": "精确模式参数覆盖，例如 CH=16、top.u_core.N=4，对应 slang -G；合并 .f 中的 -G。"
+        },
+        "rtlHierarchy.singleUnit": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "description": "精确模式将普通源文件按 .f 顺序作为同一编译单元，允许跨文件宏传递；-v 库文件保持独立。"
+        },
+        "rtlHierarchy.defaultTimescale": {
+          "type": "string",
+          "default": "",
+          "scope": "resource",
+          "description": "精确模式缺省时间单位，例如 1ns/1ps。仅用于没有显式 timescale 的模块；留空则沿用 slang 默认并报告缺失时间单位。"
+        },
+        "rtlHierarchy.fileLists": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "scope": "resource",
+          "description": "相对工作区根目录的文件列表路径。设置后只索引列表中的文件；源文件和嵌套列表的基准由 fileListBase 决定。"
+        },
+        "rtlHierarchy.include": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/*.{v,sv}"
+          ],
+          "scope": "resource",
+          "description": "没有 .f 配置时的扫描范围。建议限制为 RTL/**/*.{v,sv}。"
+        },
+        "rtlHierarchy.exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/node_modules/**",
+            "**/.git/**",
+            "**/db/**",
+            "**/incremental_db/**",
+            "**/output_files/**",
+            "**/build/**",
+            "**/dist/**",
+            "**/backup/**",
+            "**/archive/**"
+          ],
+          "scope": "resource",
+          "description": "扫描和文件列表均应用这些排除规则。"
+        },
+        "rtlHierarchy.topModule": {
+          "type": "string",
+          "default": "",
+          "scope": "resource",
+          "description": "固定顶层模块名；留空则自动发现根节点。"
+        },
+        "rtlHierarchy.debounceMs": {
+          "type": "number",
+          "default": 350,
+          "minimum": 100,
+          "maximum": 5000,
+          "description": "编辑后增量刷新的等待毫秒数。"
+        },
+        "rtlHierarchy.maxFiles": {
+          "type": "number",
+          "default": 5000,
+          "minimum": 1,
+          "maximum": 100000,
+          "scope": "resource",
+          "description": "文件上限；超过时显示告警，不宣称索引完整。"
+        },
+        "rtlHierarchy.maxFileBytes": {
+          "type": "number",
+          "default": 8388608,
+          "minimum": 1024,
+          "scope": "resource",
+          "description": "单文件大小上限，超过时显示告警。"
+        },
+        "rtlHierarchy.fileListBase": {
+          "type": "string",
+          "enum": [
+            "file",
+            "workspace"
+          ],
+          "default": "file",
+          "scope": "resource",
+          "enumDescriptions": [
+            "相对各自所属的文件列表目录",
+            "相对当前工作区文件夹"
+          ],
+          "description": "源文件和嵌套 -f/-F 路径的基准。默认沿用按列表目录解析；不会执行列表中的命令或环境变量。"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test test/core.test.cjs test/elaboration.test.cjs",
+    "test:host": "npm run build && node scripts/test-host.cjs",
+    "package": "npm run typecheck && npm run build && vsce package --no-dependencies --out dist/rtl-hierarchy-explorer-1.0.1.vsix",
+    "test:stress": "npm run build && node scripts/stress.cjs"
+  },
+  "dependencies": {
+    "picomatch": "4.0.3",
+    "tree-sitter-systemverilog": "0.4.1",
+    "web-tree-sitter": "0.25.10"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@types/picomatch": "4.0.3",
+    "@types/vscode": "1.95.0",
+    "@vscode/test-electron": "3.1.0",
+    "@vscode/vsce": "4.0.0",
+    "esbuild": "0.28.2",
+    "typescript": "5.9.3"
+  }
+}
