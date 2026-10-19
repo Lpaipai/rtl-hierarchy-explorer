@@ -1,6 +1,7 @@
 // 2026/10/16 16:47:15 by liaoweipeng1
 import * as vscode from 'vscode';
 import path from 'node:path';
+import { watch, FSWatcher } from 'node:fs';
 import picomatch from 'picomatch';
 import { ParserWorker } from './worker-client';
 import { defaultConfig, ElaboratedNode, Issue, Location, ProjectChanges, ProjectConfig, ProjectSnapshot } from './model';
@@ -42,7 +43,8 @@ class Explorer implements vscode.TreeDataProvider<ViewNode>, vscode.Disposable {
   private revision = 0;
   private disposed = false;
   private force = false;
-  private externalWatchers: vscode.FileSystemWatcher[] = [];
+  private readonly externalWatchers = new Map<string, vscode.FileSystemWatcher>();
+  private readonly nativeExternalWatchers = new Map<string, { watcher: FSWatcher; files: Set<string> }>();
   private watchSignature = '';
   private readonly pendingChanges = new Map<string, { files: Set<string>; rediscover: boolean }>();
 
@@ -234,23 +236,67 @@ class Explorer implements vscode.TreeDataProvider<ViewNode>, vscode.Disposable {
       .filter(dir => !vscode.workspace.getWorkspaceFolder(vscode.Uri.file(dir)));
     const signature = JSON.stringify([[...new Set(external)].sort(), [...new Set(directories)].sort()]);
     if (signature === this.watchSignature) { return; }
-    this.externalWatchers.forEach(watcher => watcher.dispose());
-    this.externalWatchers = [];
     this.watchSignature = signature;
+    const desired = new Map<string, vscode.RelativePattern>();
+    const parents = new Map<string, { directory: string; files: Set<string> }>();
+    const added: string[] = [];
     for (const file of new Set(external)) {
-      const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(path.dirname(file), path.basename(file)));
-      watcher.onDidChange(uri => this.fileChanged(uri, false));
-      watcher.onDidCreate(uri => this.fileChanged(uri, true));
-      watcher.onDidDelete(uri => this.fileChanged(uri, true));
-      this.externalWatchers.push(watcher);
+      const key = `file:${pathKey(file)}`;
+      desired.set(key, new vscode.RelativePattern(path.dirname(file), path.basename(file)));
+      if (!this.externalWatchers.has(key)) { added.push(file); }
+      const directory = path.dirname(file);
+      const parent = parents.get(pathKey(directory)) ?? { directory, files: new Set<string>() };
+      parent.files.add(file);
+      parents.set(pathKey(directory), parent);
     }
     for (const dir of new Set(directories)) {
-      const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(dir, '**/*.{v,sv,vh,svh}'));
+      desired.set(`dir:${pathKey(dir)}`, new vscode.RelativePattern(dir, '**/*.{v,sv,vh,svh}'));
+    }
+    // 保留未变化的监听，避免每次范围变化都拆掉已有文件的监听。
+    for (const [key, watcher] of this.externalWatchers) {
+      if (!desired.has(key)) { watcher.dispose(); this.externalWatchers.delete(key); }
+    }
+    for (const [key, pattern] of desired) {
+      if (this.externalWatchers.has(key)) { continue; }
+      const watcher = vscode.workspace.createFileSystemWatcher(pattern);
       watcher.onDidChange(uri => this.fileChanged(uri, false));
       watcher.onDidCreate(uri => this.fileChanged(uri, true));
       watcher.onDidDelete(uri => this.fileChanged(uri, true));
-      this.externalWatchers.push(watcher);
+      this.externalWatchers.set(key, watcher);
     }
+    // VS Code 的外部监听跨进程异步建立；按父目录同步监听，覆盖首次展示后的空窗。
+    // 原有 VS Code 监听仍负责缺失目录恢复与递归 include；不增加周期性文件扫描。
+    for (const [key, entry] of this.nativeExternalWatchers) {
+      if (!parents.has(key)) { entry.watcher.close(); this.nativeExternalWatchers.delete(key); }
+    }
+    for (const [key, parent] of parents) {
+      const existing = this.nativeExternalWatchers.get(key);
+      if (existing) { existing.files = parent.files; continue; }
+      try {
+        const watcher = watch(parent.directory, { persistent: false }, (event, filename) => {
+          const files = this.nativeExternalWatchers.get(key)?.files ?? [];
+          const changed = filename ? pathKey(path.join(parent.directory, filename.toString())) : undefined;
+          for (const file of files) {
+            if (!changed || changed === pathKey(file) || (event === 'rename' && filename === path.basename(parent.directory))) {
+              this.fileChanged(vscode.Uri.file(file), event === 'rename');
+            }
+          }
+        });
+        this.nativeExternalWatchers.set(key, { watcher, files: parent.files });
+        watcher.on('error', error => {
+          watcher.close();
+          if (this.nativeExternalWatchers.get(key)?.watcher !== watcher) { return; }
+          this.nativeExternalWatchers.delete(key);
+          this.watchSignature = '';
+          this.output.appendLine(`外部目录同步监听中断，保留 VS Code 监听：${String(error)}`);
+          for (const file of parent.files) { this.fileChanged(vscode.Uri.file(file), true); }
+        });
+      } catch (error) {
+        this.output.appendLine(`外部目录同步监听暂不可用，保留 VS Code 监听：${String(error)}`);
+      }
+    }
+    // 首次读取与开始监听之间也可能发生变化；仅补查新加入的外部文件。
+    for (const file of added) { this.fileChanged(vscode.Uri.file(file), true); }
   }
 
   private semanticStatus(snapshot?: ProjectSnapshot): string {
@@ -455,6 +501,7 @@ class Explorer implements vscode.TreeDataProvider<ViewNode>, vscode.Disposable {
     this.disposed = true;
     if (this.timer) { clearTimeout(this.timer); }
     this.externalWatchers.forEach(watcher => watcher.dispose());
+    this.nativeExternalWatchers.forEach(entry => entry.watcher.close());
     this.worker?.dispose();
   }
 }

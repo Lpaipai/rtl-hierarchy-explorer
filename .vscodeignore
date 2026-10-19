@@ -9,5 +9,6 @@
 !dist/extension.cjs
 !dist/worker.cjs
 !dist/*.wasm
+!dist/*.br
 !dist/licenses/**
 !dist/slang-runtime/**

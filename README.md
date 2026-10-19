@@ -2,13 +2,13 @@
 
 本地 Verilog/SystemVerilog 实例层次浏览器。打开工程、选定文件范围、查看实例并跳转源码；无需综合。
 
-当前版本 **1.0.1，MIT 开源**。Windows x64 默认使用 slang 12.0 展开已保存的 RTL；保留 Tree-sitter 静态模式，实时查看编辑中的语法关系。VS Code 原生 Tree View，运行时离线。
+当前源码版本 **1.0.2，MIT 开源**。Windows x64 默认使用 slang 12.0 展开已保存的 RTL；保留 Tree-sitter 静态模式，实时查看编辑中的语法关系。VS Code 原生 Tree View，运行时离线。
 
 [源码与版本发布](https://github.com/Lpaipai/rtl-hierarchy-explorer) · [问题反馈](https://github.com/Lpaipai/rtl-hierarchy-explorer/issues) · [Marketplace](https://marketplace.visualstudio.com/items?itemName=liaoweipeng1.rtl-hierarchy-explorer)
 
 ## 安装与使用
 
-1. 在 VS Code 扩展面板搜索 `liaoweipeng1.rtl-hierarchy-explorer`。也可从 GitHub Releases 下载 `rtl-hierarchy-explorer-1.0.1.vsix`，通过扩展面板 `…` → **Install from VSIX… / 从 VSIX 安装** 更新，保留原设置。
+1. 在 VS Code 扩展面板搜索 `liaoweipeng1.rtl-hierarchy-explorer`。也可从 GitHub Releases 下载对应已发布版本的 VSIX，通过扩展面板 `…` → **Install from VSIX… / 从 VSIX 安装** 更新，保留原设置。
 2. 打开工程文件夹，点击活动栏 **RTL Hierarchy**，使用文件按钮选择 `.f`，使用顶层按钮选择模块。
 3. 单击实例跳转实例化位置，右键 **跳转模块定义**；generate 作用域也可定位源码。
 4. 面板右上角的结构按钮可切换**精确活动层次 / 静态语法层次**。
@@ -28,6 +28,8 @@
 静态模式可以理解为“源码里写了什么”；精确模式则先代入参数、处理宏开关，再计算本次启用的模块。例如 `CH=4` 的 generate 循环会展开为 4 份实例。宏可用于切换厂商 IP 与行为模型，include 用于读取公共头文件。插件会读取源码和支持的 `.f` 选项，通常不需要重复配置。两种模式都不会运行仿真。
 
 精确后端随包提供 Python 3.13.16 嵌入式运行时、pyslang 12.0.0、nanobind-backend 1.0.0，不要求系统 Python，不下载或安装其它工具，不修改系统 PATH。Windows x64 / Windows 10 1903 及以上可使用精确模式；其它平台使用静态模式。浏览器版、虚拟工作区暂不支持。受限工作区只运行静态 WASM，信任工作区后才启用包内精确后端。
+
+1.0.2 将语法表无损压缩后随包提供，加载时在内存中恢复，不向磁盘展开第二份文件。精确运行库按清单取用，保留完整标准库；运行时仍完全离线。外部显式源文件按父目录补充同步监听，不周期性扫描工程。
 
 ## 两种模式
 
@@ -112,7 +114,7 @@ npm.cmd run package
 
 主要实现：`src/elaboration.ts` 管理后端/缓存/错误与树转换，`src/slang_bridge.py` 只导出层次，`src/parser.ts` 保留 Tree-sitter 静态提取，`src/project.ts` 管理工程范围，`src/extension.ts` 提供界面、监听和导航。
 
-发布验证覆盖 36 项独立样例自动测试和真实 VS Code 1.122.1 宿主的 14 项检查，含宏、generate、参数不同的实例、升降序/多维数组、bind/interface/primitive、中文/宏/include 导航、重复定义、缺失 IP、超时恢复、未保存等待、外部头文件、双工作区隔离。
+本地回归套件包含 38 项独立样例自动测试和真实 VS Code 宿主的 16 项检查，含宏、generate、参数不同的实例、升降序/多维数组、bind/interface/primitive、中文/宏/include 导航、重复定义、缺失 IP、超时恢复、未保存等待、外部头文件、双工作区隔离、外部文件首次显示后的立即编辑，以及压缩资源和运行库清单一致性。
 
 测试样例用于验证解析和浏览行为，不依赖产品工程。测试结果是层次工具验证，不是 RTL 功能仿真或综合结果。提交问题时请提供可公开的最小样例，详见 [使用帮助](SUPPORT.md)。
 

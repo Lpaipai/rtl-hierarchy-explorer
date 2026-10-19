@@ -3,6 +3,7 @@ const vscode = require('vscode');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs/promises');
+const { verifyImmediateExternalEdits } = require('./external-watch.cjs');
 
 async function until(predicate, message) {
   const end = Date.now() + 15000;
@@ -91,6 +92,19 @@ exports.run = async function () {
   await fs.writeFile(external, 'module shared_after; endmodule');
   await until(() => api.getSnapshots()[0].modules.some(mod => mod.name === 'shared_after'), 'External source watcher must refresh');
   reports.push('工作区外显式源文件的修改监听正确');
+  await verifyImmediateExternalEdits(api, snapshot.root);
+  reports.push('10 个新增外部目录，首次展示后立即修改均自动刷新');
+  await fs.rename(external, external + '.old');
+  await fs.writeFile(external, 'module shared_replaced; endmodule');
+  await until(() => api.getSnapshots()[0].modules.some(mod => mod.name === 'shared_replaced'),
+    'Replacing an external source must keep watching the path');
+  await fs.unlink(external);
+  await until(() => !api.getSnapshots()[0].modules.some(mod => mod.name === 'shared_replaced'),
+    'Deleting an external source must remove its definition');
+  await fs.writeFile(external, 'module shared_after; endmodule');
+  await until(() => api.getSnapshots()[0].modules.some(mod => mod.name === 'shared_after'),
+    'Recreating an external source must recover without manual refresh');
+  reports.push('外部文件替换、删除及重新创建后监听与索引正确恢复');
   const folderConfig = vscode.workspace.getConfiguration('rtlHierarchy', vscode.Uri.file(snapshot.root));
   await folderConfig.update('exclude', ['renamed.v'], vscode.ConfigurationTarget.WorkspaceFolder);
   await until(() => !api.getSnapshots()[0].modules.some(mod => mod.name === 'leaf'), 'Exclusion changes must remove old definitions');

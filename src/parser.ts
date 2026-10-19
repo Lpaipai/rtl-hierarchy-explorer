@@ -1,5 +1,7 @@
 // 2026/10/16 16:47:15 by liaoweipeng1
 import path from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { brotliDecompressSync } from 'node:zlib';
 import { Language, Parser, Node } from 'web-tree-sitter';
 import { Instance, Location, ModuleDefinition, ParsedFile } from './model';
 
@@ -44,7 +46,9 @@ export class RtlParser {
 
   static async create(assetDirectory: string): Promise<RtlParser> {
     await Parser.init({ locateFile: () => path.join(assetDirectory, 'tree-sitter.wasm') });
-    const language = await Language.load(path.join(assetDirectory, 'tree-sitter-systemverilog.wasm'));
+    const compressed = await readFile(path.join(assetDirectory, 'tree-sitter-systemverilog.wasm.br'));
+    const grammar = brotliDecompressSync(compressed, { maxOutputLength: 23_483_181 });
+    const language = await Language.load(grammar);
     const parser = new Parser();
     parser.setLanguage(language);
     return new RtlParser(parser);

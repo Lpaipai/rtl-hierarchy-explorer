@@ -2,7 +2,7 @@
   "name": "rtl-hierarchy-explorer",
   "displayName": "RTL Hierarchy Explorer",
   "description": "本地 Verilog/SystemVerilog 活动层次展开、静态浏览、工程范围与源码导航",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publisher": "liaoweipeng1",
   "preview": false,
   "icon": "media/icon.png",
@@ -273,9 +273,9 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "npm run build && node --test test/core.test.cjs test/elaboration.test.cjs",
+    "test": "npm run build && node --test test/core.test.cjs test/elaboration.test.cjs test/package.test.cjs",
     "test:host": "npm run build && node scripts/test-host.cjs",
-    "package": "npm run typecheck && npm run build && vsce package --no-dependencies --out dist/rtl-hierarchy-explorer-1.0.1.vsix",
+    "package": "npm run typecheck && npm run build && vsce package --no-dependencies --out dist/rtl-hierarchy-explorer-1.0.2.vsix",
     "test:stress": "npm run build && node scripts/stress.cjs"
   },
   "dependencies": {
